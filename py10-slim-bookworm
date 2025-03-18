@@ -1,0 +1,38 @@
+# Use an official Python runtime as a parent image
+FROM python:3.10-slim-bookworm
+
+# Set non-interactive frontend to avoid prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Set the working directory in the container
+WORKDIR /usr
+
+# Copy the current directory contents into the container at /usr/src/app
+# if install failed, please change the pip source to 'https://mirror.baidu.com/pypi/simple'
+
+# If issue arrise change pip host
+#RUN python -m pip install --upgrade pip -i https://mirror.baidu.com/pypi/simple --trusted-host=mirror.baidu.com
+#RUN pip3 config set global.index-url https://mirror.baidu.com/pypi/simple
+#RUN pip3 config set install.trusted-host mirror.baidu.com
+
+RUN python -m pip install --upgrade pip -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host=tsinghua.edu.cn
+RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple/
+RUN pip3 config set install.trusted-host tsinghua.edu.cn
+#RUN python3 --version
+
+RUN apt-get update && apt-get install wget  -y
+
+RUN wget -O requirement.txt --no-check-certificate https://raw.githubusercontent.com/airockchip/rknn-toolkit2/master/rknn-toolkit2/packages/x86_64/requirements_cp310-2.3.0.txt
+RUN pip install --no-cache-dir -r requirement.txt
+
+RUN wget --no-check-certificate  \
+    https://raw.githubusercontent.com/airockchip/rknn-toolkit2/master/rknn-toolkit2/packages/x86_64/rknn_toolkit2-2.3.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl && \
+    pip3 install rknn_toolkit2-2.3.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl && \
+    rm rknn_toolkit2-2.3.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl requirement.txt
+
+RUN pip3 cache purge
+
+# Verify Python & Pip versions
+RUN python3 --version
+RUN pip3 --version
+

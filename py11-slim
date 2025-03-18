@@ -1,0 +1,37 @@
+# Use an official Python runtime as a parent image
+FROM python:3.11-slim as base
+
+# Set non-interactive frontend to avoid prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install wget zlib1g zlib1g-dev libprotobuf-dev libsm6 libgl1 libglib2.0-0 android-tools-adb -y \
+      && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Create symlinks for Python & Pip
+RUN ln -sfn /usr/bin/idle3 /usr/bin/idle && \
+     ln -sfn /usr/bin/pydoc3 /usr/bin/pydoc && \
+     ln -sfn /usr/bin/python3 /usr/bin/python && \
+     ln -sfn /usr/bin/python3-config /usr/bin/python-config && \
+     ln -sfn /usr/bin/pip3 /usr/bin/pip
+
+# IF ISSUE ARRISES, USE BELOW HOST TO DOWNLOAD PYTHON PIP PACKAGES
+RUN python -m pip install --upgrade pip -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host=pypi.tuna.tsinghua.edu.cn
+RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+RUN pip3 config set install.trusted-host pypi.tuna.tsinghua.edu.cn
+
+# Upgrade pip and configure mirror
+#RUN python -m pip install --upgrade pip -i https://mirror.baidu.com/pypi/simple --trusted-host=mirror.baidu.com
+#RUN pip3 config set global.index-url https://mirror.baidu.com/pypi/simple
+#RUN pip3 config set install.trusted-host mirror.baidu.com
+
+RUN wget -O requirement.txt --no-check-certificate https://raw.githubusercontent.com/airockchip/rknn-toolkit2/master/rknn-toolkit2/packages/x86_64/requirements_cp311-2.3.0.txt
+RUN pip install  --no-cache-dir -r requirement.txt 
+
+# Download and install RKNN Toolkit 2 in one step to avoid extra layers
+RUN wget --no-check-certificate https://raw.githubusercontent.com/airockchip/rknn-toolkit2/master/rknn-toolkit2/packages/x86_64/rknn_toolkit2-2.3.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl  && \
+    pip3 install rknn_toolkit2-2.3.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl && \
+    rm rknn_toolkit2-2.3.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl requirement.txt && \
+    pip3 cache purge
+
+# Verify Python & Pip versions
+RUN python3 --version && pip3 --version
